@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "NovaAI - Free AI Assistant",
+  "version": "1.0.0",
+  "description": "Free AI page summarizer, chat, translator & writer. No subscription. Free alternative to Monica, Sider & HARPA AI.",
+  "permissions": ["activeTab", "storage", "scripting", "contextMenus"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "NovaAI - AI Assistant"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
