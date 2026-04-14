@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NovaRecorder</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      width: 360px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      min-height: 480px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-logo { font-size: 22px; }
+    .header-text h1 { color: white; font-size: 16px; font-weight: 700; }
+    .header-text p { color: rgba(255,255,255,0.75); font-size: 11px; }
+    .badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    /* Ad Banner */
+    .ad-banner {
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 6px 10px;
+      text-align: center;
+    }
+    .ad-label { font-size: 9px; color: rgba(255,255,255,0.2); margin-bottom: 3px; }
+    .ad-slot {
+      width: 340px;
+      height: 60px;
+      background: rgba(255,255,255,0.04);
+      border: 1px dashed rgba(255,255,255,0.12);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      color: rgba(255,255,255,0.2);
+      font-size: 11px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .section { padding: 16px; }
+
+    /* Recording options */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .option-card {
+      background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .option-card:hover { background: rgba(255,255,255,0.1); }
+    .option-card.selected {
+      border-color: #ef4444;
+      background: rgba(239,68,68,0.15);
+    }
+    .option-icon { font-size: 24px; margin-bottom: 6px; }
+    .option-name { font-size: 12px; font-weight: 600; color: #f1f5f9; }
+    .option-desc { font-size: 10px; color: #64748b; margin-top: 2px; }
+
+    /* Settings */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-label { font-size: 12px; color: #94a3b8; }
+    .setting-value { font-size: 12px; color: #f1f5f9; }
+    select {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #f1f5f9;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      outline: none;
+      cursor: pointer;
+    }
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      cursor: pointer;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.15);
+      border-radius: 20px;
+      transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: #ef4444; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    /* Record button */
+    .record-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .record-btn.start {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+    .record-btn.start:hover { opacity: 0.9; }
+    .record-btn.stop {
+      background: linear-gradient(135deg, #1e293b, #334155);
+      color: #ef4444;
+      border: 2px solid #ef4444;
+      animation: pulse-border 1.5s infinite;
+    }
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+    }
+    .record-dot {
+      width: 10px; height: 10px;
+      background: currentColor;
+      border-radius: 50%;
+    }
+    .stop-square {
+      width: 10px; height: 10px;
+      background: currentColor;
+      border-radius: 2px;
+    }
+
+    /* Recording status */
+    .status-area {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      display: none;
+    }
+    .status-area.visible { display: block; }
+    .status-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .rec-indicator {
+      width: 8px; height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    .rec-label { font-size: 12px; font-weight: 600; color: #ef4444; }
+    .rec-timer { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .rec-size { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+    /* Recordings list */
+    .recordings-section {
+      padding: 0 16px 16px;
+    }
+    .recordings-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+    .recording-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .recording-icon { font-size: 20px; }
+    .recording-info { flex: 1; min-width: 0; }
+    .recording-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recording-meta { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .download-btn {
+      background: rgba(239,68,68,0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.3);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .download-btn:hover { background: rgba(239,68,68,0.25); }
+    .del-btn {
+      background: none;
+      border: none;
+      color: #475569;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px;
+    }
+    .del-btn:hover { color: #ef4444; }
+    .no-recordings {
+      text-align: center;
+      color: #475569;
+      font-size: 12px;
+      padding: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-logo">🎥</div>
+    <div class="header-text">
+      <h1>NovaRecorder</h1>
+      <p>Free unlimited screen recorder</p>
+    </div>
+    <div class="badge">FREE</div>
+  </div>
+
+  <!-- Ad Banner -->
+  <div class="ad-banner">
+    <div class="ad-label">Advertisement</div>
+    <a class="ad-slot" href="#" target="_blank">
+      <!-- Google AdSense unit goes here -->
+      <span>📢 Your Ad Here</span>
+    </a>
+  </div>
+
+  <div class="section">
+    <!-- Source selection -->
+    <div class="options-grid">
+      <div class="option-card selected" data-source="screen" onclick="selectSource(this,'screen')">
+        <div class="option-icon">🖥️</div>
+        <div class="option-name">Full Screen</div>
+        <div class="option-desc">Entire display</div>
+      </div>
+      <div class="option-card" data-source="tab" onclick="selectSource(this,'tab')">
+        <div class="option-icon">🪟</div>
+        <div class="option-name">Current Tab</div>
+        <div class="option-desc">Browser tab only</div>
+      </div>
+      <div class="option-card" data-source="window" onclick="selectSource(this,'window')">
+        <div class="option-icon">🗂️</div>
+        <div class="option-name">Window</div>
+        <div class="option-desc">App window</div>
+      </div>
+      <div class="option-card" data-source="cam" onclick="selectSource(this,'cam')">
+        <div class="option-icon">📷</div>
+        <div class="option-name">Webcam</div>
+        <div class="option-desc">Camera only</div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="setting-row">
+      <span class="setting-label">Quality</span>
+      <select id="qualitySelect">
+        <option value="1080">1080p</option>
+        <option value="720" selected>720p</option>
+        <option value="480">480p</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Include Audio</span>
+      <label class="toggle">
+        <input type="checkbox" id="audioToggle" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Include Mic</span>
+      <label class="toggle">
+        <input type="checkbox" id="micToggle">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <button class="record-btn start" id="recordBtn">
+      <span class="record-dot"></span>
+      Start Recording
+    </button>
+
+    <!-- Active recording status -->
+    <div class="status-area" id="statusArea">
+      <div class="status-top">
+        <div class="rec-indicator"></div>
+        <div class="rec-label">Recording</div>
+      </div>
+      <div class="rec-timer" id="recTimer">00:00</div>
+      <div class="rec-size" id="recSize">0.0 MB recorded</div>
+    </div>
+  </div>
+
+  <!-- Saved recordings -->
+  <div class="recordings-section">
+    <div class="recordings-title">Recent Recordings</div>
+    <div id="recordingsList">
+      <div class="no-recordings">No recordings yet. Start recording!</div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

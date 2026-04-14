@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NovaAI</title>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      width: 400px;
+      height: 580px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .header-logo { font-size: 20px; }
+    .header-text h1 { color: white; font-size: 15px; font-weight: 700; }
+    .header-text p { color: rgba(255,255,255,0.75); font-size: 10px; }
+    .badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-size: 9px;
+      padding: 3px 7px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    /* Ad Banner */
+    .ad-banner {
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 5px 10px;
+      flex-shrink: 0;
+    }
+    .ad-label { font-size: 9px; color: rgba(255,255,255,0.2); margin-bottom: 2px; }
+    .ad-slot {
+      width: 100%;
+      height: 52px;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.1);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.18);
+      font-size: 10px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 9px 6px;
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .tab-btn:hover { color: #f1f5f9; }
+    .tab-btn.active {
+      color: #f59e0b;
+      border-bottom-color: #f59e0b;
+    }
+
+    /* Tab content */
+    .tab-content { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .tab-content.active { display: flex; }
+
+    /* Summarize tab */
+    .summarize-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+    }
+    .summarize-area::-webkit-scrollbar { width: 4px; }
+    .summarize-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .action-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 12px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: #f1f5f9;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: inherit;
+    }
+    .action-btn:hover { background: rgba(245,158,11,0.15); border-color: #f59e0b; }
+    .action-btn .icon { font-size: 20px; display: block; margin-bottom: 5px; }
+
+    .output-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 80px;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .output-box.loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #64748b;
+    }
+    .mini-spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: #f59e0b;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .output-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .small-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #94a3b8;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .small-btn:hover { background: rgba(255,255,255,0.1); color: #f1f5f9; }
+
+    /* Chat tab */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .msg {
+      max-width: 85%;
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+    .msg.user {
+      background: rgba(245,158,11,0.2);
+      border: 1px solid rgba(245,158,11,0.3);
+      align-self: flex-end;
+      color: #fef3c7;
+      border-radius: 12px 12px 2px 12px;
+    }
+    .msg.assistant {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      align-self: flex-start;
+      color: #cbd5e1;
+      border-radius: 12px 12px 12px 2px;
+    }
+    .msg.assistant.thinking {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      color: #64748b;
+    }
+
+    .chat-input-area {
+      padding: 10px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+    .chat-input {
+      flex: 1;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 8px 12px;
+      color: #f1f5f9;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+      resize: none;
+      max-height: 80px;
+      line-height: 1.4;
+    }
+    .chat-input:focus { border-color: #f59e0b; }
+    .chat-input::placeholder { color: rgba(255,255,255,0.25); }
+    .send-btn {
+      background: #f59e0b;
+      border: none;
+      color: white;
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+    }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Translate tab */
+    .translate-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .lang-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .lang-select {
+      flex: 1;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #f1f5f9;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .swap-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #94a3b8;
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .swap-btn:hover { background: rgba(255,255,255,0.1); }
+    .translate-input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 10px;
+      color: #f1f5f9;
+      font-size: 12px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 80px;
+      outline: none;
+      line-height: 1.5;
+    }
+    .translate-input:focus { border-color: #f59e0b; }
+    .translate-input::placeholder { color: rgba(255,255,255,0.25); }
+    .translate-btn {
+      background: #f59e0b;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .translate-btn:hover { opacity: 0.9; }
+
+    /* Write tab */
+    .write-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .write-templates {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .template-chip {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      color: #94a3b8;
+      text-align: center;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .template-chip:hover { background: rgba(245,158,11,0.1); border-color: #f59e0b; color: #fbbf24; }
+
+    /* API settings */
+    .settings-area {
+      padding: 10px 14px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+    .api-input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 7px;
+      padding: 6px 10px;
+      color: #94a3b8;
+      font-size: 10px;
+      font-family: monospace;
+      outline: none;
+    }
+    .api-input:focus { border-color: #f59e0b; }
+    .api-label { font-size: 9px; color: rgba(255,255,255,0.25); margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-logo">🤖</div>
+    <div class="header-text">
+      <h1>NovaAI Assistant</h1>
+      <p>Summarize · Chat · Translate · Write</p>
+    </div>
+    <div class="badge">FREE</div>
+  </div>
+
+  <!-- Ad Banner -->
+  <div class="ad-banner">
+    <div class="ad-label">Advertisement</div>
+    <a class="ad-slot" href="#" target="_blank">
+      <!-- Google AdSense unit -->
+      <span>📢 Your Ad Here — Help keep NovaAI free</span>
+    </a>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('summarize', this)">📋 Summarize</button>
+    <button class="tab-btn" onclick="switchTab('chat', this)">💬 Chat</button>
+    <button class="tab-btn" onclick="switchTab('translate', this)">🌍 Translate</button>
+    <button class="tab-btn" onclick="switchTab('write', this)">✍️ Write</button>
+  </div>
+
+  <!-- Summarize Tab -->
+  <div class="tab-content active" id="tab-summarize">
+    <div class="summarize-area">
+      <div class="action-grid">
+        <button class="action-btn" onclick="runPageAction('summarize')">
+          <span class="icon">📋</span>Summarize Page
+        </button>
+        <button class="action-btn" onclick="runPageAction('keypoints')">
+          <span class="icon">🔑</span>Key Points
+        </button>
+        <button class="action-btn" onclick="runPageAction('tldr')">
+          <span class="icon">⚡</span>TL;DR
+        </button>
+        <button class="action-btn" onclick="runPageAction('explain')">
+          <span class="icon">🧠</span>Explain Simply
+        </button>
+      </div>
+
+      <div class="output-box" id="summarizeOutput">
+        Click an action above to analyze the current page content.
+      </div>
+      <div class="output-actions" id="outputActions" style="display:none">
+        <button class="small-btn" onclick="copyOutput()">📋 Copy</button>
+        <button class="small-btn" onclick="clearOutput()">✕ Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Tab -->
+  <div class="tab-content" id="tab-chat">
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg assistant">
+        👋 Hi! I'm NovaAI. Ask me anything, or I can help you understand the current webpage. What would you like to know?
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chatInput" placeholder="Ask anything..." rows="1"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendChat()">➤</button>
+    </div>
+  </div>
+
+  <!-- Translate Tab -->
+  <div class="tab-content" id="tab-translate">
+    <div class="translate-area">
+      <div class="lang-row">
+        <select class="lang-select" id="fromLang">
+          <option value="auto">Auto-detect</option>
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="it">Italian</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
+          <option value="zh">Chinese</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="ar">Arabic</option>
+          <option value="hi">Hindi</option>
+          <option value="nl">Dutch</option>
+          <option value="pl">Polish</option>
+          <option value="tr">Turkish</option>
+        </select>
+        <button class="swap-btn" onclick="swapLangs()">⇄</button>
+        <select class="lang-select" id="toLang">
+          <option value="en" selected>English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="it">Italian</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
+          <option value="zh">Chinese</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="ar">Arabic</option>
+          <option value="hi">Hindi</option>
+          <option value="nl">Dutch</option>
+          <option value="pl">Polish</option>
+          <option value="tr">Turkish</option>
+        </select>
+      </div>
+      <textarea class="translate-input" id="translateInput" placeholder="Enter text to translate..."></textarea>
+      <button class="translate-btn" onclick="doTranslate()">Translate →</button>
+      <div class="output-box" id="translateOutput" style="min-height:60px">Translation will appear here</div>
+      <button class="small-btn" onclick="getPageTranslation()">🌐 Translate selected text on page</button>
+    </div>
+  </div>
+
+  <!-- Write Tab -->
+  <div class="tab-content" id="tab-write">
+    <div class="write-area">
+      <div class="write-templates">
+        <button class="template-chip" onclick="useTemplate('email')">📧 Professional Email</button>
+        <button class="template-chip" onclick="useTemplate('linkedin')">💼 LinkedIn Post</button>
+        <button class="template-chip" onclick="useTemplate('tweet')">🐦 Twitter Thread</button>
+        <button class="template-chip" onclick="useTemplate('blog')">📝 Blog Intro</button>
+        <button class="template-chip" onclick="useTemplate('cover')">📄 Cover Letter</button>
+        <button class="template-chip" onclick="useTemplate('summary')">📊 Executive Summary</button>
+      </div>
+      <textarea class="translate-input" id="writePrompt" placeholder="Describe what you want to write..." style="min-height:70px"></textarea>
+      <button class="translate-btn" onclick="generateWrite()">✨ Generate with AI</button>
+      <div class="output-box" id="writeOutput" style="min-height:80px">Your AI-written content will appear here</div>
+      <div class="output-actions" id="writeActions" style="display:none">
+        <button class="small-btn" onclick="copyWrite()">📋 Copy</button>
+        <button class="small-btn" onclick="regenerateWrite()">↺ Regenerate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Settings -->
+  <div class="settings-area">
+    <div class="api-label">AI API Endpoint (Ollama/OpenAI compatible)</div>
+    <input type="text" class="api-input" id="apiEndpoint" placeholder="http://localhost:11434 or https://api.openai.com/v1">
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

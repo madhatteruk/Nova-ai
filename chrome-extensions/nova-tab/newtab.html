@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NovaTab</title>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    :root {
+      --bg1: #0f172a;
+      --bg2: #1e293b;
+      --accent: #6366f1;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --card: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.1);
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg1);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Dynamic background */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    }
+
+    .main {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      grid-template-rows: auto 1fr auto;
+      gap: 0;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* Clock area */
+    .clock-area {
+      grid-column: 1;
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 60px;
+    }
+
+    .greeting {
+      font-size: 20px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 400;
+    }
+
+    #clock {
+      font-size: clamp(72px, 12vw, 120px);
+      font-weight: 700;
+      letter-spacing: -3px;
+      color: var(--text);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #date {
+      font-size: 20px;
+      color: var(--muted);
+      margin-top: 12px;
+      font-weight: 400;
+    }
+
+    /* Focus goal */
+    .focus-area {
+      margin-top: 40px;
+    }
+    .focus-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+    #focusInput {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--border);
+      color: var(--text);
+      font-size: 22px;
+      font-family: inherit;
+      width: 100%;
+      max-width: 500px;
+      padding: 6px 0;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #focusInput:focus { border-bottom-color: var(--accent); }
+    #focusInput::placeholder { color: rgba(255,255,255,0.25); }
+
+    /* Right sidebar */
+    .sidebar {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 20px 0 20px 20px;
+      overflow-y: auto;
+    }
+    .sidebar::-webkit-scrollbar { width: 0; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      backdrop-filter: blur(10px);
+    }
+    .card-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    /* Weather */
+    .weather-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .weather-icon { font-size: 36px; }
+    .weather-temp { font-size: 32px; font-weight: 700; }
+    .weather-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .weather-location { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+    /* Pomodoro timer */
+    .timer-display {
+      font-size: 42px;
+      font-weight: 700;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      color: var(--text);
+      margin: 8px 0;
+    }
+    .timer-controls { display: flex; gap: 8px; justify-content: center; }
+    .timer-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 7px 18px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .timer-btn:hover { opacity: 0.85; }
+    .timer-btn.secondary {
+      background: rgba(255,255,255,0.1);
+      color: var(--muted);
+    }
+    .timer-mode { display: flex; gap: 6px; margin-bottom: 8px; justify-content: center; }
+    .mode-btn {
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .mode-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    /* Todo */
+    .todo-input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    #todoInput {
+      flex: 1;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      color: var(--text);
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+    }
+    #todoInput:focus { border-color: var(--accent); }
+    #todoInput::placeholder { color: rgba(255,255,255,0.25); }
+    .add-btn {
+      background: var(--accent);
+      border: none;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    #todoList { list-style: none; max-height: 180px; overflow-y: auto; }
+    #todoList::-webkit-scrollbar { width: 0; }
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text);
+    }
+    .todo-item:last-child { border-bottom: none; }
+    .todo-item input[type=checkbox] {
+      accent-color: var(--accent);
+      width: 14px; height: 14px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .todo-item label { flex: 1; cursor: pointer; }
+    .todo-item.done label { text-decoration: line-through; color: var(--muted); }
+    .todo-del {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .todo-item:hover .todo-del { opacity: 1; }
+
+    /* Quote */
+    .quote-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+    .quote-author {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: right;
+    }
+    .quote-refresh {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      float: right;
+      margin-top: -2px;
+    }
+    .quote-refresh:hover { color: var(--text); }
+
+    /* Bottom ad bar */
+    .ad-bar {
+      grid-column: 1 / 3;
+      grid-row: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      gap: 12px;
+    }
+    .ad-label-small { font-size: 9px; color: rgba(255,255,255,0.2); }
+    .ad-slot-wide {
+      width: 728px;
+      height: 50px;
+      background: rgba(255,255,255,0.04);
+      border: 1px dashed rgba(255,255,255,0.12);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.2);
+      font-size: 11px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .ad-slot-wide:hover { background: rgba(255,255,255,0.06); }
+
+    /* Links row */
+    .links-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .quick-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 12px;
+      transition: background 0.15s;
+    }
+    .quick-link:hover { background: rgba(255,255,255,0.1); }
+    .link-icon { font-size: 16px; }
+  </style>
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="main">
+    <!-- Clock / Left side -->
+    <div class="clock-area">
+      <div class="greeting" id="greeting">Good morning</div>
+      <div id="clock">12:00</div>
+      <div id="date">Monday, January 1</div>
+
+      <div class="focus-area">
+        <div class="focus-label">What's your main focus today?</div>
+        <input type="text" id="focusInput" placeholder="Enter your goal for today...">
+      </div>
+
+      <div class="links-row">
+        <a class="quick-link" href="https://gmail.com" target="_blank"><span class="link-icon">📧</span>Gmail</a>
+        <a class="quick-link" href="https://calendar.google.com" target="_blank"><span class="link-icon">📅</span>Calendar</a>
+        <a class="quick-link" href="https://drive.google.com" target="_blank"><span class="link-icon">📁</span>Drive</a>
+        <a class="quick-link" href="https://github.com" target="_blank"><span class="link-icon">💻</span>GitHub</a>
+        <a class="quick-link" href="https://youtube.com" target="_blank"><span class="link-icon">▶️</span>YouTube</a>
+      </div>
+    </div>
+
+    <!-- Right sidebar -->
+    <div class="sidebar">
+      <!-- Weather -->
+      <div class="card" id="weatherCard">
+        <div class="card-title">Weather</div>
+        <div class="weather-main">
+          <div class="weather-icon" id="weatherIcon">🌤️</div>
+          <div>
+            <div class="weather-temp" id="weatherTemp">--°</div>
+            <div class="weather-desc" id="weatherDesc">Loading...</div>
+          </div>
+        </div>
+        <div class="weather-location" id="weatherLocation">Detecting location...</div>
+      </div>
+
+      <!-- Pomodoro Timer -->
+      <div class="card">
+        <div class="card-title">Focus Timer</div>
+        <div class="timer-mode">
+          <button class="mode-btn active" data-minutes="25" onclick="setTimerMode(this,25)">Pomodoro</button>
+          <button class="mode-btn" data-minutes="5" onclick="setTimerMode(this,5)">Short Break</button>
+          <button class="mode-btn" data-minutes="15" onclick="setTimerMode(this,15)">Long Break</button>
+        </div>
+        <div class="timer-display" id="timerDisplay">25:00</div>
+        <div class="timer-controls">
+          <button class="timer-btn" id="timerStartBtn" onclick="toggleTimer()">Start</button>
+          <button class="timer-btn secondary" onclick="resetTimer()">Reset</button>
+        </div>
+      </div>
+
+      <!-- Quote -->
+      <div class="card">
+        <div class="card-title">
+          Daily Quote
+          <button class="quote-refresh" onclick="nextQuote()" title="Next quote">↻</button>
+        </div>
+        <div class="quote-text" id="quoteText">"The secret of getting ahead is getting started."</div>
+        <div class="quote-author" id="quoteAuthor">— Mark Twain</div>
+      </div>
+
+      <!-- Todo -->
+      <div class="card">
+        <div class="card-title">Today's Tasks</div>
+        <div class="todo-input-row">
+          <input type="text" id="todoInput" placeholder="Add a task..." maxlength="80">
+          <button class="add-btn" onclick="addTodo()">+</button>
+        </div>
+        <ul id="todoList"></ul>
+      </div>
+    </div>
+
+    <!-- Bottom Ad bar -->
+    <div class="ad-bar">
+      <span class="ad-label-small">Ad</span>
+      <a class="ad-slot-wide" href="#" target="_blank">
+        <!-- Google AdSense Leaderboard 728x90 or 728x50 goes here -->
+        <span>📢 Advertisement — Support NovaTab by keeping it free</span>
+      </a>
+    </div>
+  </div>
+
+  <script src="newtab.js"></script>
+</body>
+</html>
